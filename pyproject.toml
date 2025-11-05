@@ -1,7 +1,7 @@
 [project]
 name = "pathfinding"
 version = "0.1.0"
-description = "Add your description here"
+description = "Tiny project to improve on path-finding algorithms"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = []
