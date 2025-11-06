@@ -59,6 +59,17 @@ class Grid:
         random.shuffle(neighbours)
         return neighbours
 
+    def get_neighbours2(self, row: int, col: int) -> list[CellIndex]:
+        neighbours = []
+        positions = [(-2, 0), (2, 0), (0, -2), (0, 2)]
+        for position in positions:
+            new_row = row + position[0]
+            new_col = col + position[1]
+            if 0 <= new_row < self.height and 0 <= new_col < self.width:
+                neighbours.append((new_row, new_col))
+        random.shuffle(neighbours)
+        return neighbours
+
     def toggle_cell_type(self, row: int, col: int, cell_type: CellType) -> CellType:
         if self.cells[row][col] == cell_type:
             value = CellType.EMPTY

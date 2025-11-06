@@ -7,6 +7,7 @@ from typing import Literal
 from algorithms import A_star, CellDynState, bfs, dijkstra
 from grid import CellIndex, CellType, Grid
 from gridview import GridView
+from labygen import GenerationState, dfs_maze
 
 WINDOW_WIDTH = 800
 WINDOW_HEIGHT = 800
@@ -26,7 +27,7 @@ if __name__ == "__main__":
     canvas = Canvas(root, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="gray70")
     canvas.pack()
 
-    grid = Grid(width=10, height=10)
+    grid = Grid(width=30, height=30)
     gridview = GridView(grid, canvas, WINDOW_WIDTH, WINDOW_HEIGHT)
     gridview.draw_grid_init()
 
@@ -46,7 +47,7 @@ if __name__ == "__main__":
     def get_instruction_text(state: ProgramState):
         match state:
             case ProgramState.INIT:
-                return "Clic-gauche pour créer le labyrinthe. Maintenir <s> pour ajouter du sable (2x plus lent) et <w> pour de l'eau (5x plus lent)"
+                return "Clic-gauche pour créer le labyrinthe. Maintenir <s> pour ajouter du sable (2x plus lent) et <w> pour de l'eau (5x plus lent). <l> pour génération auto"
             case ProgramState.LABYRINTH_DRAWN:
                 return "Clic-droit pour choisir les points de départ (vert) et d'arrivée (bleu). Touche <R> pour les choisir aléatoirement. <C> Pour réinitialiser le labyrinthe."
             case ProgramState.BOUNDS_CHOSEN:
@@ -91,13 +92,34 @@ if __name__ == "__main__":
             global program_state
             try:
                 cell, dyn_state = next(algo)
-                gridview.update_cell(cell[0], cell[1], dynamic_state=dyn_state)
+                gridview.update_cell(*cell, dynamic_state=dyn_state)
                 root.after(ms=animation_step, func=step)
             except StopIteration:
                 if program_state == ProgramState.SIMULATION_RUNNNING:
                     program_state = ProgramState.SIMULATION_FINISHED
                     update_instructions()
                     root.after(ms=500, func=clear_dynamic_states_but_path)
+
+        step()
+
+    def animate_maze_gen(
+        algorithm: Callable[[Grid], Generator],
+    ):
+        algo = algorithm(grid)
+
+        def step():
+            global program_state
+            try:
+                cell, state = next(algo)
+                if state == GenerationState.DIGGING:
+                    delay = 4
+                else:
+                    delay = "idle"
+                gridview.update_cell(*cell)
+                root.after(ms=delay, func=step)
+            except StopIteration:
+                program_state = ProgramState.LABYRINTH_DRAWN
+                update_instructions()
 
         step()
 
@@ -195,6 +217,15 @@ if __name__ == "__main__":
                 update_instructions()
                 gridview.clear_dynamic_states()
                 animate_algo(A_star, start, goal)
+
+        if event.keysym == "l":
+            if (
+                program_state != ProgramState.SIMULATION_FINISHED
+                and program_state != ProgramState.SIMULATION_RUNNNING
+            ):
+                grid.reset()
+                gridview.update_full_grid()
+                animate_maze_gen(dfs_maze)
 
         if event.keysym == "c":
             if program_state == ProgramState.SIMULATION_FINISHED:
