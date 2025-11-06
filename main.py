@@ -4,7 +4,7 @@ from functools import partial
 from tkinter import Canvas, Event, Tk
 from typing import Literal
 
-from algorithms import CellDynState, bfs, dijkstra
+from algorithms import A_star, CellDynState, bfs, dijkstra
 from grid import CellIndex, CellType, Grid
 from gridview import GridView
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     canvas = Canvas(root, width=WINDOW_WIDTH, height=WINDOW_HEIGHT, bg="gray70")
     canvas.pack()
 
-    grid = Grid(width=30, height=30)
+    grid = Grid(width=10, height=10)
     gridview = GridView(grid, canvas, WINDOW_WIDTH, WINDOW_HEIGHT)
     gridview.draw_grid_init()
 
@@ -50,7 +50,7 @@ if __name__ == "__main__":
             case ProgramState.LABYRINTH_DRAWN:
                 return "Clic-droit pour choisir les points de départ (vert) et d'arrivée (bleu). Touche <R> pour les choisir aléatoirement. <C> Pour réinitialiser le labyrinthe."
             case ProgramState.BOUNDS_CHOSEN:
-                return "Lancer la simulation. F1 pour BFS, F2 pour Dijkstra"
+                return "Lancer la simulation. F1 pour BFS, F2 pour Dijkstra, F3 pour A*"
             case ProgramState.SIMULATION_RUNNNING:
                 return "Flèche de droite pour avance rapide"
             case ProgramState.SIMULATION_FINISHED:
@@ -118,8 +118,11 @@ if __name__ == "__main__":
                 goal = (row, col)
                 gridview.update_cell(*goal)
 
-            if program_state == ProgramState.LABYRINTH_DRAWN and start and goal:
+            if start and goal:
                 program_state = ProgramState.BOUNDS_CHOSEN
+                update_instructions()
+            else:
+                program_state = ProgramState.LABYRINTH_DRAWN
                 update_instructions()
 
     def on_click(event):
@@ -173,18 +176,25 @@ if __name__ == "__main__":
                 update_instructions()
 
         if event.keysym == "F1":
-            if start and goal:
+            if start and goal and program_state != ProgramState.SIMULATION_RUNNNING:
                 program_state = ProgramState.SIMULATION_RUNNNING
                 update_instructions()
                 gridview.clear_dynamic_states()
                 animate_algo(bfs, start, goal)
 
         if event.keysym == "F2":
-            if start and goal:
+            if start and goal and program_state != ProgramState.SIMULATION_RUNNNING:
                 program_state = ProgramState.SIMULATION_RUNNNING
                 update_instructions()
                 gridview.clear_dynamic_states()
                 animate_algo(dijkstra, start, goal)
+
+        if event.keysym == "F3":
+            if start and goal and program_state != ProgramState.SIMULATION_RUNNNING:
+                program_state = ProgramState.SIMULATION_RUNNNING
+                update_instructions()
+                gridview.clear_dynamic_states()
+                animate_algo(A_star, start, goal)
 
         if event.keysym == "c":
             if program_state == ProgramState.SIMULATION_FINISHED:

@@ -56,6 +56,7 @@ class Grid:
             new_col = col + position[1]
             if 0 <= new_row < self.height and 0 <= new_col < self.width:
                 neighbours.append((new_row, new_col))
+        random.shuffle(neighbours)
         return neighbours
 
     def toggle_cell_type(self, row: int, col: int, cell_type: CellType) -> CellType:

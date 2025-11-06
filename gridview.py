@@ -81,7 +81,7 @@ class GridView:
                     center.y - 0.5 * self.cell_size_h,
                     center.x + 0.5 * self.cell_size_w,
                     center.y + 0.5 * self.cell_size_h,
-                    outline="grey70",
+                    outline="grey30",
                     fill="grey8",
                 )
                 self.rect_pids[(row, col)] = [pid]
