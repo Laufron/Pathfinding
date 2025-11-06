@@ -48,7 +48,7 @@ if __name__ == "__main__":
             case ProgramState.INIT:
                 return "Clic-gauche pour créer le labyrinthe. Maintenir <s> pour ajouter du sable (2x plus lent) et <w> pour de l'eau (5x plus lent)"
             case ProgramState.LABYRINTH_DRAWN:
-                return "Clic-droit pour choisir les points de départ (vert) et d'arrivée (bleu). Touche <R> pour les choisir aléatoirement"
+                return "Clic-droit pour choisir les points de départ (vert) et d'arrivée (bleu). Touche <R> pour les choisir aléatoirement. <C> Pour réinitialiser le labyrinthe."
             case ProgramState.BOUNDS_CHOSEN:
                 return "Lancer la simulation. F1 pour BFS, F2 pour Dijkstra"
             case ProgramState.SIMULATION_RUNNNING:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
     # Bindings
     def on_right_click(event):
         row, col = gridview.get_cell_index(event.x, event.y)
-        if grid.get_cell_type(row, col) != CellType.WALL:
+        if (row, col) != (-1, -1) and grid.get_cell_type(row, col) != CellType.WALL:
             global start, goal, program_state
             if start and goal:
                 clear_start_goal()
@@ -176,18 +176,25 @@ if __name__ == "__main__":
             if start and goal:
                 program_state = ProgramState.SIMULATION_RUNNNING
                 update_instructions()
+                gridview.clear_dynamic_states()
                 animate_algo(bfs, start, goal)
 
         if event.keysym == "F2":
             if start and goal:
                 program_state = ProgramState.SIMULATION_RUNNNING
                 update_instructions()
+                gridview.clear_dynamic_states()
                 animate_algo(dijkstra, start, goal)
 
         if event.keysym == "c":
-            gridview.clear_dynamic_states()
             if program_state == ProgramState.SIMULATION_FINISHED:
+                gridview.clear_dynamic_states()
                 program_state = ProgramState.BOUNDS_CHOSEN
+                update_instructions()
+            else:
+                grid.reset()
+                gridview.update_full_grid()
+                program_state = ProgramState.INIT
                 update_instructions()
 
     def on_key_release(event: Event):

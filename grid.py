@@ -27,6 +27,11 @@ class Grid:
     def set_cell(self, row: int, col: int, value: CellType):
         self.cells[row][col] = value
 
+    def reset(self):
+        for row in range(self.height):
+            for col in range(self.width):
+                self.set_cell(row, col, CellType.EMPTY)
+
     def get_cell_cost(self, row: int, col: int) -> float:
         state = self.get_cell_type(row, col)
         match state:

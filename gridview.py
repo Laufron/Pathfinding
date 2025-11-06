@@ -27,8 +27,8 @@ class GridView:
         )
         self.padding_w = (self.canvas_width - self.grid.width * self.cell_size_w) / 2
         self.padding_h = (self.canvas_height - self.grid.height * self.cell_size_h) / 2
-        self.rect_pids = {}
-        self.dyn_states = {}
+        self.rect_pids: dict[CellIndex, list[int]] = dict()
+        self.dyn_states: dict[CellIndex, CellDynState] = dict()
 
     def get_cell_index(self, x: float, y: float) -> CellIndex:
         if (
@@ -84,20 +84,51 @@ class GridView:
                     outline="grey70",
                     fill="grey8",
                 )
-                self.rect_pids[(row, col)] = pid
+                self.rect_pids[(row, col)] = [pid]
 
     def clear_dynamic_states(self, except_state: CellDynState | None = None):
         for cell_index, dyn_state in self.dyn_states.items():
             if dyn_state != except_state:
-                static_state = self.grid.get_cell_type(*cell_index)
-                fill = self.get_cell_color(static_state)
-                self.canvas.itemconfig(self.rect_pids[cell_index], fill=fill)
+                rectangles = self.rect_pids[cell_index]
+                if len(rectangles) == 2:
+                    self.canvas.delete(rectangles.pop())
+
+                else:
+                    static_state = self.grid.get_cell_type(*cell_index)
+                    fill = self.get_cell_color(static_state)
+                    self.canvas.itemconfig(rectangles[0], fill=fill)
 
     def update_cell(
         self, row: int, col: int, dynamic_state: CellDynState | None = None
     ):
         static_state = self.grid.get_cell_type(row, col)
         fill = self.get_cell_color(static_state, dynamic_state)
-        self.canvas.itemconfig(self.rect_pids[(row, col)], fill=fill)
+
+        rectangles = self.rect_pids[(row, col)]
+        if (
+            dynamic_state == CellDynState.PATH
+            and static_state != CellType.BEGIN
+            and static_state != CellType.GOAL
+        ):
+            static_color = self.get_cell_color(static_state)
+            self.canvas.itemconfig(rectangles[0], fill=static_color)
+            center = self.get_cell_center_in_canvas(row, col)
+            rectangles.append(
+                self.canvas.create_rectangle(
+                    center.x - 0.3 * self.cell_size_w,
+                    center.y - 0.3 * self.cell_size_h,
+                    center.x + 0.3 * self.cell_size_w,
+                    center.y + 0.3 * self.cell_size_h,
+                    outline="",
+                    fill=fill,
+                )
+            )
+        else:
+            self.canvas.itemconfig(rectangles[0], fill=fill)
         if dynamic_state:
             self.dyn_states[(row, col)] = dynamic_state
+
+    def update_full_grid(self):
+        for row in range(self.grid.height):
+            for col in range(self.grid.width):
+                self.update_cell(row, col)
