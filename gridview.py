@@ -1,9 +1,8 @@
-from tkinter import Canvas
 from dataclasses import dataclass
+from tkinter import Canvas
 
-
-from grid import Grid, Cell
 from algorithms import CellDynState
+from grid import CellIndex, CellType, Grid
 
 MIN_PADDING = 20
 
@@ -29,8 +28,9 @@ class GridView:
         self.padding_w = (self.canvas_width - self.grid.width * self.cell_size_w) / 2
         self.padding_h = (self.canvas_height - self.grid.height * self.cell_size_h) / 2
         self.rect_pids = {}
+        self.dyn_states = {}
 
-    def get_cell_index(self, x: float, y: float) -> tuple[int, int]:
+    def get_cell_index(self, x: float, y: float) -> CellIndex:
         if (
             x <= self.padding_w
             or x >= self.canvas_width - self.padding_w
@@ -48,12 +48,12 @@ class GridView:
         return Vec2(x, y)
 
     def get_cell_color(
-        self, static_state: Cell, dynamic_state: CellDynState | None = None
+        self, static_state: CellType, dynamic_state: CellDynState | None = None
     ):
-        if static_state == Cell.BEGIN:
-            return "forest green"
-        if static_state == Cell.GOAL:
-            return "steel blue"
+        if static_state == CellType.BEGIN:
+            return "lime green"
+        if static_state == CellType.GOAL:
+            return "DodgerBlue2"
         if dynamic_state:
             match dynamic_state:
                 case CellDynState.PATH:
@@ -63,10 +63,14 @@ class GridView:
                 case CellDynState.VISITED:
                     return "MediumPurple1"
         match static_state:
-            case Cell.EMPTY:
+            case CellType.EMPTY:
                 return "grey8"
-            case Cell.WALL:
+            case CellType.WALL:
                 return "gray60"
+            case CellType.SAND:
+                return "goldenrod1"
+            case CellType.WATER:
+                return "DeepSkyBlue2"
 
     def draw_grid_init(self):
         for row in range(self.grid.height):
@@ -77,21 +81,23 @@ class GridView:
                     center.y - 0.5 * self.cell_size_h,
                     center.x + 0.5 * self.cell_size_w,
                     center.y + 0.5 * self.cell_size_h,
-                    outline="white",
+                    outline="grey70",
                     fill="grey8",
                 )
                 self.rect_pids[(row, col)] = pid
 
-    def clear_dynamic_states(self):
-        for row in range(self.grid.height):
-            for col in range(self.grid.width):
-                static_state = self.grid.get_state(row, col)
+    def clear_dynamic_states(self, except_state: CellDynState | None = None):
+        for cell_index, dyn_state in self.dyn_states.items():
+            if dyn_state != except_state:
+                static_state = self.grid.get_cell_type(*cell_index)
                 fill = self.get_cell_color(static_state)
-                self.canvas.itemconfig(self.rect_pids[(row, col)], fill=fill)
+                self.canvas.itemconfig(self.rect_pids[cell_index], fill=fill)
 
     def update_cell(
         self, row: int, col: int, dynamic_state: CellDynState | None = None
     ):
-        static_state = self.grid.get_state(row, col)
+        static_state = self.grid.get_cell_type(row, col)
         fill = self.get_cell_color(static_state, dynamic_state)
         self.canvas.itemconfig(self.rect_pids[(row, col)], fill=fill)
+        if dynamic_state:
+            self.dyn_states[(row, col)] = dynamic_state
